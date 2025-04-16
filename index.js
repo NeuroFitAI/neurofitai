@@ -4,7 +4,7 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const TOKEN = process.env.BOT_TOKEN;
+const TOKEN = process.env.TELEGRAM_TOKEN;
 const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
 
 app.use(express.json());
