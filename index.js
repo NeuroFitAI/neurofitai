@@ -1,27 +1,52 @@
-const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
+const axios = require('axios');
+require('dotenv').config();
 
-const token = process.env.TELEGRAM_TOKEN;
-const bot = new TelegramBot(token, { polling: true });
-
-// Ответ на любое сообщение
-bot.on('message', (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text?.toLowerCase() || '';
-
-  if (text.includes('привет')) {
-    bot.sendMessage(chatId, 'Привет! Я твой AI-ассистент NeuroFitAI. Готов помочь тебе с тренировками и энергией!');
-  } else {
-    bot.sendMessage(chatId, 'Задай мне вопрос по тренировкам, питанию или здоровью, и я помогу!');
-  }
-});
-
-// Express-сервер для Render
 const app = express();
 const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => {
-  res.send('NeuroFitAI is running!');
+const TOKEN = process.env.BOT_TOKEN;
+const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
+
+app.use(express.json());
+
+// Обработка запроса от Telegram
+app.post(`/webhook/${TOKEN}`, async (req, res) => {
+  const message = req.body?.message;
+
+  if (message) {
+    const chatId = message.chat.id;
+    const text = message.text?.toLowerCase() || '';
+
+    let reply = 'Я не понял, но я уже учусь 😉';
+
+    if (text.includes('привет')) reply = 'Привет! Готов помочь по телу и разуму 💪🧠';
+    if (text.includes('тренировка')) reply = 'Хочешь жиросжигающую или силовую?';
+
+    await axios.post(`${TELEGRAM_API}/sendMessage`, {
+      chat_id: chatId,
+      text: reply
+    });
+  }
+
+  return res.sendStatus(200);
 });
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+
+app.get('/', (req, res) => {
+  res.send('NeuroFitAI Webhook Bot запущен 🚀');
+});
+
+app.listen(PORT, async () => {
+  console.log(`✅ Server running on port ${PORT}`);
+
+  // Установить Webhook при запуске
+  const WEBHOOK_URL = `${process.env.RENDER_EXTERNAL_URL}/webhook/${TOKEN}`;
+  try {
+    await axios.get(`${TELEGRAM_API}/deleteWebhook`);
+    await axios.post(`${TELEGRAM_API}/setWebhook`, {
+      url: WEBHOOK_URL
+    });
+    console.log('🔗 Webhook успешно установлен:', WEBHOOK_URL);
+  } catch (error) {
+    console.error('Ошибка при установке webhook:', error?.response?.data || error);
+  }
 });
