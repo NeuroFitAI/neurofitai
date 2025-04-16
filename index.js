@@ -1,34 +1,35 @@
-const express = require('express');
+const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
-require('dotenv').config();
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const TOKEN = process.env.TELEGRAM_TOKEN;
-const TELEGRAM_API = `https://api.telegram.org/bot${TOKEN}`;
+const token = process.env.TELEGRAM_TOKEN;
+const openaiApiKey = process.env.OPENAI_API_KEY;
+const bot = new TelegramBot(token, { polling: true });
 
-app.use(express.json());
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const userMessage = msg.text;
 
-// Обработка запроса от Telegram
-app.post(`/webhook/${TOKEN}`, async (req, res) => {
-  const message = req.body?.message;
+  try {
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4',
+        messages: [{ role: 'user', content: userMessage }],
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${openaiApiKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
 
-  if (message) {
-    const chatId = message.chat.id;
-    const text = message.text?.toLowerCase() || '';
-
-    let reply = 'Я не понял, но я уже учусь 😉';
-
-    if (text.includes('привет')) reply = 'Привет! Готов помочь по телу и разуму 💪🧠';
-    if (text.includes('тренировка')) reply = 'Хочешь жиросжигающую или силовую?';
-
-    await axios.post(`${TELEGRAM_API}/sendMessage`, {
-      chat_id: chatId,
-      text: reply
-    });
+    const gptReply = response.data.choices[0].message.content;
+    bot.sendMessage(chatId, gptReply);
+  } catch (error) {
+    console.error('Error from GPT:', error.response?.data || error.message);
+    bot.sendMessage(chatId, 'Произошла ошибка, попробуй позже.');
   }
-
-  return res.sendStatus(200);
 });
 
 app.get('/', (req, res) => {
