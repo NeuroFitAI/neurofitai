@@ -1,5 +1,7 @@
 const express = require('express');
 const fetch = require('node-fetch');
+const axios = require('axios');
+
 require('dotenv').config();
 
 const app = express();
@@ -10,6 +12,11 @@ const CHAT_ID = process.env.CHAT_ID;
 
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
 const WEBHOOK_URL = `https://neurofitai.onrender.com/webhook`; // заменишь на свой
+axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/setWebhook`, {
+  url: WEBHOOK_URL
+})
+.then(res => console.log('✅ Webhook установлен:', res.data))
+.catch(err => console.error('❌ Ошибка установки webhook:', err.response?.data || err.message));
 
 app.use(express.json());
 
