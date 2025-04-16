@@ -1,7 +1,7 @@
 const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 
-const token = process.env.TELEGRAM_TOKEN;
+const token = process.env.OPENAI_API_KEY;
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const bot = new TelegramBot(token, { polling: true });
 
